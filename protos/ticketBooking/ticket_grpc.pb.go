@@ -26,7 +26,7 @@ type TicketBookingServiceClient interface {
 	ReadReceiptByUserEmail(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Receipt, error)
 	ReadUsersAndSeatsBySection(ctx context.Context, in *Message, opts ...grpc.CallOption) (*UsersSeats, error)
 	DeleteUserByEmail(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error)
-	UpdateSeatByEmail(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error)
+	UpdateSeatByEmail(ctx context.Context, in *UpdateSeat, opts ...grpc.CallOption) (*Message, error)
 }
 
 type ticketBookingServiceClient struct {
@@ -73,7 +73,7 @@ func (c *ticketBookingServiceClient) DeleteUserByEmail(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *ticketBookingServiceClient) UpdateSeatByEmail(ctx context.Context, in *Message, opts ...grpc.CallOption) (*Message, error) {
+func (c *ticketBookingServiceClient) UpdateSeatByEmail(ctx context.Context, in *UpdateSeat, opts ...grpc.CallOption) (*Message, error) {
 	out := new(Message)
 	err := c.cc.Invoke(ctx, "/tickerBooking.ticketBookingService/UpdateSeatByEmail", in, out, opts...)
 	if err != nil {
@@ -90,7 +90,7 @@ type TicketBookingServiceServer interface {
 	ReadReceiptByUserEmail(context.Context, *Message) (*Receipt, error)
 	ReadUsersAndSeatsBySection(context.Context, *Message) (*UsersSeats, error)
 	DeleteUserByEmail(context.Context, *Message) (*Message, error)
-	UpdateSeatByEmail(context.Context, *Message) (*Message, error)
+	UpdateSeatByEmail(context.Context, *UpdateSeat) (*Message, error)
 	mustEmbedUnimplementedTicketBookingServiceServer()
 }
 
@@ -110,7 +110,7 @@ func (UnimplementedTicketBookingServiceServer) ReadUsersAndSeatsBySection(contex
 func (UnimplementedTicketBookingServiceServer) DeleteUserByEmail(context.Context, *Message) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUserByEmail not implemented")
 }
-func (UnimplementedTicketBookingServiceServer) UpdateSeatByEmail(context.Context, *Message) (*Message, error) {
+func (UnimplementedTicketBookingServiceServer) UpdateSeatByEmail(context.Context, *UpdateSeat) (*Message, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateSeatByEmail not implemented")
 }
 func (UnimplementedTicketBookingServiceServer) mustEmbedUnimplementedTicketBookingServiceServer() {}
@@ -199,7 +199,7 @@ func _TicketBookingService_DeleteUserByEmail_Handler(srv interface{}, ctx contex
 }
 
 func _TicketBookingService_UpdateSeatByEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Message)
+	in := new(UpdateSeat)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func _TicketBookingService_UpdateSeatByEmail_Handler(srv interface{}, ctx contex
 		FullMethod: "/tickerBooking.ticketBookingService/UpdateSeatByEmail",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TicketBookingServiceServer).UpdateSeatByEmail(ctx, req.(*Message))
+		return srv.(TicketBookingServiceServer).UpdateSeatByEmail(ctx, req.(*UpdateSeat))
 	}
 	return interceptor(ctx, in, info, handler)
 }

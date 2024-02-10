@@ -5,17 +5,16 @@ package tickerBooking;
 option go_package = "github.com/haakaashs/grpc-ticketBooking/protos/ticketBooking";
 
 message Receipt{
-    int32 Id = 1;
-    string From = 2;
-    string To = 3;
-    User User= 4;
-    int32 PricePaid = 5;
+    string From = 1;
+    string To = 2;
+    User User= 3;
+    int32 PricePaid = 4;
 }
 
 message User{
-    string FirstName = 2;
-    string SecondName = 3;
-    string EmailId = 4;
+    string FirstName = 1;
+    string SecondName = 2;
+    string EmailId = 3;
 }
 
 message Message{
@@ -26,13 +25,19 @@ message UsersSeats{
     map<string,int32> MapData= 1;
 }
 
+message UpdateSeat{
+    string Email = 1;
+    string section = 2;
+    int32 seatNo = 3;
+}
+
 
 service ticketBookingService{
     rpc CreateReceipt(Receipt)returns(Message);
     rpc ReadReceiptByUserEmail(Message)returns(Receipt);
     rpc ReadUsersAndSeatsBySection(Message)returns(UsersSeats);
     rpc DeleteUserByEmail(Message)returns(Message);
-    rpc UpdateSeatByEmail(Message)returns(Message);
+    rpc UpdateSeatByEmail(UpdateSeat)returns(Message);
 }
 
 //  protoc --go_out=. --go-grpc_out=. --go_opt=paths=source_relative --go-grpc_opt=paths=source_relative protos/ticketBooking/ticket.proto
