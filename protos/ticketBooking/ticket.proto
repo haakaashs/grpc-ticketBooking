@@ -13,7 +13,7 @@ message Receipt{
 
 message User{
     string FirstName = 1;
-    string SecondName = 2;
+    string LastName = 2;
     string EmailId = 3;
 }
 
@@ -22,7 +22,7 @@ message Message{
 }
 
 message UsersSeats{
-    map<string,int32> MapData= 1;
+    map<int32,string> MapData= 1;
 }
 
 message UpdateSeat{

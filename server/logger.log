@@ -1,0 +1,5 @@
+INFO2024/02/10 20:14:42 logger.go:30: server listening on port :50001
+INFO2024/02/10 20:14:53 logger.go:30: enter server CreateReceipt
+INFO2024/02/10 20:14:53 logger.go:30: exit server CreateReceipt
+INFO2024/02/10 20:14:56 logger.go:30: enter server UpdateSeatByEmail
+INFO2024/02/10 20:15:12 logger.go:30: enter server DeleteUserByEmail

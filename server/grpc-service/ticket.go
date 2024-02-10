@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/haakaashs/grpc-ticketBooking/log"
 	"github.com/haakaashs/grpc-ticketBooking/protos/ticketBooking"
@@ -12,7 +11,6 @@ import (
 
 type server struct {
 	receipt map[string]*ticketBooking.Receipt
-	mu      sync.Mutex
 	ticketBooking.TicketBookingServiceServer
 }
 
@@ -39,9 +37,6 @@ func (s *server) CreateReceipt(ctx context.Context, receipt *ticketBooking.Recei
 	funcDesc := "CreateReceipt"
 	log.Generic.INFO("enter server " + funcDesc)
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	var err error
 
 	if _, ok := s.receipt[receipt.User.EmailId]; ok {
@@ -63,7 +58,6 @@ func (s *server) CreateReceipt(ctx context.Context, receipt *ticketBooking.Recei
 		log.Generic.ERROR(err)
 		return &ticketBooking.Message{}, err
 	}
-
 	log.Generic.INFO("exit server " + funcDesc)
 	return &ticketBooking.Message{Message: "created successfully"}, nil
 }
@@ -71,9 +65,6 @@ func (s *server) CreateReceipt(ctx context.Context, receipt *ticketBooking.Recei
 func (s *server) ReadReceiptByUserEmail(ctx context.Context, email *ticketBooking.Message) (*ticketBooking.Receipt, error) {
 	funcDesc := "ReadReceiptByUserEmail"
 	log.Generic.INFO("enter server " + funcDesc)
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	res, ok := s.receipt[email.Message]
 	if !ok {
@@ -90,23 +81,20 @@ func (s *server) ReadUsersAndSeatsBySection(ctx context.Context, section *ticket
 	funcDesc := "ReadUsersAndSeatsBySection"
 	log.Generic.INFO("enter server " + funcDesc)
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	seatInfo := make(map[string]int32)
+	seatInfo := make(map[int32]string)
 	var err error
 
 	if section.Message == "sectionA" {
-		for key := range s.receipt {
-			if res, ok := s.receipt[key]; ok {
-				seatInfo[fmt.Sprintf("%s %s", res.User.FirstName, res.User.SecondName)] = trainSeats.sectionA[key]
+		for key, res := range s.receipt {
+			if trainSeats.sectionA[key] != 0 {
+				seatInfo[trainSeats.sectionA[key]] = fmt.Sprintf("%s %s", res.User.FirstName, res.User.LastName)
 			}
 		}
 
 	} else if section.Message == "sectionB" {
-		for key := range s.receipt {
-			if res, ok := s.receipt[key]; ok {
-				seatInfo[fmt.Sprintf("%s %s", res.User.FirstName, res.User.SecondName)] = trainSeats.sectionB[key]
+		for key, res := range s.receipt {
+			if trainSeats.sectionB[key] != 0 {
+				seatInfo[trainSeats.sectionB[key]] = fmt.Sprintf("%s %s", res.User.FirstName, res.User.LastName)
 			}
 		}
 	} else {
@@ -122,9 +110,6 @@ func (s *server) ReadUsersAndSeatsBySection(ctx context.Context, section *ticket
 func (s *server) DeleteUserByEmail(ctx context.Context, email *ticketBooking.Message) (*ticketBooking.Message, error) {
 	funcDesc := "DeleteUserByEmail"
 	log.Generic.INFO("enter server " + funcDesc)
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	var err error
 
@@ -143,17 +128,20 @@ func (s *server) DeleteUserByEmail(ctx context.Context, email *ticketBooking.Mes
 }
 
 func (s *server) UpdateSeatByEmail(ctx context.Context, input *ticketBooking.UpdateSeat) (*ticketBooking.Message, error) {
-	funcDesc := "DeleteUserByEmail"
+	funcDesc := "UpdateSeatByEmail"
 	log.Generic.INFO("enter server " + funcDesc)
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
 
 	var err error
 
+	if _, ok := s.receipt[input.Email]; !ok {
+		err = fmt.Errorf("user does not exist")
+		log.Generic.ERROR(err)
+		return &ticketBooking.Message{}, err
+	}
+
 	if input.Section == "sectionA" {
 		if input.SeatNo < 10 && checkSeatAvailable(trainSeats.sectionA, input.SeatNo) {
-			s.DeleteUserByEmail(context.Background(), &ticketBooking.Message{Message: input.Email})
+			s.DeleteUserByEmail(ctx, &ticketBooking.Message{Message: input.Email})
 			trainSeats.sectionA[input.Email] = input.SeatNo
 		} else {
 			err = fmt.Errorf("seat number %d does not exist", input.SeatNo)
@@ -162,7 +150,7 @@ func (s *server) UpdateSeatByEmail(ctx context.Context, input *ticketBooking.Upd
 		}
 	} else if input.Section == "sectionB" {
 		if input.SeatNo <= 10 && checkSeatAvailable(trainSeats.sectionB, input.SeatNo) {
-			s.DeleteUserByEmail(context.Background(), &ticketBooking.Message{Message: input.Email})
+			s.DeleteUserByEmail(ctx, &ticketBooking.Message{Message: input.Email})
 			trainSeats.sectionB[input.Email] = input.SeatNo
 		} else {
 			err = fmt.Errorf("seat number %d does not exist", input.SeatNo)
@@ -176,7 +164,7 @@ func (s *server) UpdateSeatByEmail(ctx context.Context, input *ticketBooking.Upd
 	}
 
 	log.Generic.INFO("exit server " + funcDesc)
-	return &ticketBooking.Message{Message: "deleted successfully"}, nil
+	return &ticketBooking.Message{Message: "update successfully"}, nil
 }
 
 func checkSeatAvailable(data map[string]int32, seatNo int32) bool {
